@@ -1,6 +1,6 @@
 //
 //  ApiNetwork.swift
-//  muz
+//  ApiNetwork
 //
 //  Created by Norbert Billa on 26/10/2014.
 //  Copyright (c) 2014 norbert. All rights reserved.
@@ -48,7 +48,11 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     var agent                   : String?
     var parameter               : NSDictionary?
     
-    var completionDownloading   : ((NSData?)-> Void)?
+    private var totalDataDownloading    : NSMutableData!
+    private var totalLengthDownloading  : Int64 = 0
+    private var currentLengthDownloaded : Int64 = 0
+    
+    var completionDownloading   : ((data :NSData?, totalLengthDownloading: Int64, currentLengthDownloaded: Int64, error: Bool)-> Void)?
     
     override init (){ super.init() }
     init (urlConnection: String) {
@@ -190,27 +194,18 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
             self.launchRequestWithNSUrl(request, completion: completion)
     }
     
-    
-    func launchRequestDownloadingWithNSUrl(request : NSURLRequest,
-        completion : ((NSData?)-> Void)) -> Void {
-            
-            var data        : NSData?
-            var response    : NSURLResponse?
-            var errors      : NSError?
-            
-            self.completionDownloading = completion
-            NSURLConnection(request: request, delegate: self, startImmediately: true)
-    }
-    
-    
     func launchRequestDownloading(cache: Bool,
         timeout: NSTimeInterval ,
         method: MethodRequest,
-        completion : ((NSData?)-> Void)) -> Void {
+        completion : (data :NSData?, totalLengthDownloading: Int64, currentLengthDownloaded: Int64, error :Bool)-> Void)
+        -> Void {
             
             
-            if  self.url == nil { completion(nil);return }
+            if  self.url == nil {
+                completion(data: nil, totalLengthDownloading: 0, currentLengthDownloaded: 0, error: true);return
+            }
             let request : NSMutableURLRequest = NSMutableURLRequest(URL: self.url)
+            request.setValue("", forHTTPHeaderField: "Accept-Encoding")
             request.cachePolicy = cache == true
                 ? NSURLRequestCachePolicy.ReloadRevalidatingCacheData
                 : NSURLRequestCachePolicy.ReloadIgnoringLocalCacheData
@@ -229,24 +224,22 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
             NSURLConnection(request: request, delegate: self, startImmediately: true)
     }
     
-
+    
     internal func connection(connection: NSURLConnection, didFailWithError error: NSError) {
-        println("some error")
+                        self.completionDownloading!(data: nil, totalLengthDownloading: 0, currentLengthDownloaded: 0, error: true);
     }
     
     internal func connection(connection: NSURLConnection, didReceiveResponse response: NSURLResponse) {
-        println("response")
+        self.totalLengthDownloading = response.expectedContentLength
+        self.currentLengthDownloaded = 0
+        self.totalDataDownloading = NSMutableData()
     }
     
     internal func connection(connection: NSURLConnection, didReceiveData data: NSData) {
-        println("some data")
-        self.completionDownloading!(data)
+        self.totalDataDownloading.appendData(data)
+        self.currentLengthDownloaded += data.length
+        self.completionDownloading!(data: data, totalLengthDownloading: self.totalLengthDownloading, currentLengthDownloaded: self.currentLengthDownloaded, error: false)
     }
     
-    internal func connection(connection: NSURLConnection, didSendBodyData bytesWritten: Int, totalBytesWritten: Int, totalBytesExpectedToWrite: Int) {
-        println(bytesWritten)
-        println(totalBytesWritten)
-        println(totalBytesExpectedToWrite)
-    }
     
 }
