@@ -20,7 +20,6 @@ To use this vendor add files ApiNetwork.swift and Reachability.swift to your Pro
 
 
 ## Parameter
- Parameter can be add with method addParameterWithKey
      let n : ApiNetwork = ApiNetwork(stringURL: "yourUrl")
      n.addParameterWithKey("user", "jack")
      n.addParameterWithKey("password", "test")
