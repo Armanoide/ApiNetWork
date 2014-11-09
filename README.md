@@ -1,13 +1,13 @@
 ApiNetWork
 ==========
 
-# Manage NetWork for Swift
+# Manage Async NetWork for Swift
 Note: Build on Xcode 6 
 
 ## Install
 
-To use this vendor add files ApiNetwork.swift and Reachability.swift to your Project
-
+To use this vendor add files ApiNetwork.swift and Reachability.swift to your Project.
+method launchRequest, launchRequestWithNSURL,launchRequestDownloading are all asynchronous
 
 ## Basic
     let n : ApiNetwork = ApiNetwork(stringURL: "http://google.fr")
