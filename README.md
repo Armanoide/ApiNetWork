@@ -4,9 +4,9 @@ ApiNetWork
 # Manage NetWork for Swift
 Note: Build on Xcode 6 
 
-## Intall
+## Install
 
-To use this vendor add files ApiNetwork and to your Project
+To use this vendor add files ApiNetwork.swift and Reachability.swift to your Project
 
 
 ## Basic
@@ -21,9 +21,9 @@ To use this vendor add files ApiNetwork and to your Project
 
 ## Parameter
  Parameter can be add with method addParameterWithKey
-    let n : ApiNetwork = ApiNetwork(stringURL: "yourUrl")
-    n.addParameterWithKey("user", "jack")
-    n.addParameterWithKey("password", "test")
+     let n : ApiNetwork = ApiNetwork(stringURL: "yourUrl")
+     n.addParameterWithKey("user", "jack")
+     n.addParameterWithKey("password", "test")
 
 
 ## Downloading
@@ -41,7 +41,8 @@ To use this vendor add files ApiNetwork and to your Project
     } else { /* There is no network */}
 
 ### Method Request
-  for your method request can use .GET .POST .DELETE  .PUT
+  for your method request can use .GET .POST .DELETE .PUT
+
 
 ## Output Response with launchRequest, launchRequestWithNSURL 
 By default the response output try to convert to NSDictionary. To change the output response type:
