@@ -48,17 +48,17 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     var agent                   : String?
     var parameter               : NSDictionary?
     
-    private var totalDataDownloading    : NSMutableData!
+    private(set) internal var totalDataDownloading    : NSMutableData!
     private var totalLengthDownloading  : Int64 = 0
     private var currentLengthDownloaded : Int64 = 0
     
     var completionDownloading   : ((data :NSData?, totalLengthDownloading: Int64, currentLengthDownloaded: Int64, error: Bool)-> Void)?
     
     override init (){ super.init() }
-    init (urlConnection: String) {
+    init (stringURL: String) {
         super.init()
         if Reachability.isConnectedToNetwork()
-        { self.url = NSURL(string: urlConnection) }
+        { self.url = NSURL(string: stringURL) }
     }
     
     func connected() -> Bool { return Reachability.isConnectedToNetwork() }
@@ -147,7 +147,7 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     }
     
     
-    func launchRequestWithNSUrl(request : NSURLRequest,
+    func launchRequestWithNSURL(request : NSURLRequest,
         completion : ((NSDictionary?)-> Void)) -> Void {
             
             var data : NSData?
@@ -191,7 +191,7 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
             }
             
             if self.agent != nil { request.setValue(self.agent, forHTTPHeaderField: "User-Agent") }
-            self.launchRequestWithNSUrl(request, completion: completion)
+            self.launchRequestWithNSURL(request, completion: completion)
     }
     
     func launchRequestDownloading(cache: Bool,
