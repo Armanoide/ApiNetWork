@@ -9,27 +9,54 @@
 import Foundation
 import UIKit
 
+/// Ascy Manager NetWork V1.1
 class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     
-    let DEGUG_MODE_NETWORK = true
     
     private struct ActivityManager {  static var NumberOfCallsToSetVisible : Int32 = 0 }
     
-    // OUTPUT RESPNSE
+    /**
+    Output Response
+    
+    - NSDictionary
+    - NSData
+    - String
+    */
     enum ResponseOutput {
         case NSDictionary
         case String
         case NSData
     }
     
-    // METOHOD GET
+    /**
+    Request Method HTTP/1.1
+    
+    - POST
+    - GET
+    - DELETE
+    - PUT
+    */
     enum MethodRequest : String {
         case POST                   = "POST"
         case GET                    = "GET"
         case DELETE                 = "DELETE"
         case PUT                    = "PUT"
+        case HEAD                   = "HEAD"
+        case CONNECT                = "CONNECT"
     }
     
+    /**
+    The func launchRequest and launchRequestWithNSURL return a description
+    of the Request in JSON. KeyResult is the key to acces to each information
+    of the Request
+    
+    - CODE_RESPONSE     : satut code of Request ex: 404,200, 201
+    - CONNECTION_ERROR  : error description of the request
+    - RESPONSE          : response of the request depends of the ResponseOutput
+    - HRADER            : header of the request
+    - MIME_TYPE         : myme type of the request ex:application/json
+    - URL               : response url request
+    */
     enum KeyResult : String {
         case CODE_RESPONSE          = "status code"
         case CONNECTION_ERROR       = "errors"
@@ -39,18 +66,18 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
         case URL                    = "url"
     }
     
-    // JSON KEY
-    
     
     // API PARAMS
-    let url                     : NSURL!
-    var ouput                   : ResponseOutput = ResponseOutput.NSDictionary
-    var agent                   : String?
-    var parameter               : NSDictionary?
+    var ouput                                           : ResponseOutput = ResponseOutput.NSDictionary
+    private(set) internal var url                       : NSURL!
+    private(set) internal var agent                     : String!
+    private(set) internal var parameter                 : NSDictionary!
+    private(set) internal var objectJsonRequest         : NSDictionary!
     
-    private(set) internal var totalDataDownloading    : NSMutableData!
-    private var totalLengthDownloading  : Int64 = 0
-    private var currentLengthDownloaded : Int64 = 0
+    private(set) internal var totalDataDownloaded       : NSMutableData!
+    private(set) internal var expectLengthDownloading   : Int64 = 0
+    private(set) internal var totalLengthDownloaded     : Int64 = 0
+    private(set) internal var errorDownloading          : NSError?
     
     var completionDownloading   : ((data :NSData?, totalLengthDownloading: Int64, currentLengthDownloaded: Int64, error: Bool)-> Void)?
     
@@ -61,8 +88,22 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
         { self.url = NSURL(string: stringURL) }
     }
     
+    
+    /**
+    Check if network can be reached
+    
+    :returns: Bool true if network is available
+    */
     func connected() -> Bool { return Reachability.isConnectedToNetwork() }
     
+    
+    /**
+    Set a user-agent of the request
+    
+    :param: agent-> the new user-agent
+    
+    :returns: Void
+    */
     func changeUserAgent(agent : String) -> Void { self.agent = agent }
     
     private func setNetworkActivityIndicatorVisible(visibility setVisible : Bool) -> Void {
@@ -71,7 +112,17 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
         UIApplication.sharedApplication().networkActivityIndicatorVisible = setVisible
     }
     
-    func addParameterWithKey(key: String, value: String) {
+    /**
+    Add parameter to the request. The function can be you only with method
+    launchRequest and launchRequestDownloading
+    
+    :param: key-> the of the parameter
+    
+    :param: value-> the value of the paramter
+    
+    :returns: Void
+    */
+    func addParameterWithKey(key: String, value: String) -> Void {
         var p : NSMutableDictionary?
         if parameter == nil { p = NSMutableDictionary() }
         else { p = NSMutableDictionary(dictionary: parameter!) }
@@ -79,6 +130,8 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
         parameter = p
     }
     
+    
+    func setJSONObject() {}
     
     private func parseJSON(inputData : NSData, originData :String) -> NSDictionary? {
         var errorJson  : NSError?
@@ -111,7 +164,6 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
         
         if errors == nil
         {
-            //println(responseString)
             
             switch self.ouput {
             case ResponseOutput.NSDictionary:
@@ -128,25 +180,27 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
             }
             
         }
-        else
-        {
-            #if DEGUG_MODE_NETWORK
-                println(errors!.localizedDescription)
-            #endif
-        }
+        
         jsonReturn = jsonReturn == nil ? NSMutableDictionary() : jsonReturn
         self.setNetworkActivityIndicatorVisible(visibility: false)
         jsonReturn.setObject(mymetype != nil ? mymetype! : "", forKey: KeyResult.MIME_TYPE.rawValue)
         jsonReturn.setObject(urlResponse != nil ? urlResponse! : "", forKey: KeyResult.URL.rawValue)
         jsonReturn.setObject(String(statusCode), forKey: KeyResult.CODE_RESPONSE.rawValue)
         jsonReturn.setObject(errors == nil ? "" : errors!.localizedDescription , forKey: KeyResult.CONNECTION_ERROR.rawValue)
-        #if DEGUG_MODE_NETWORK
-            println(jsonReturn)
-        #endif
         return jsonReturn
     }
     
     
+    /**
+    the function will immediately lanuch in a therad request. Response will be
+    send to the main thread
+    
+    :param: request-> (NSURLRequest)
+    
+    :param: completion-> ((NSDictionary?)-> Void))
+    
+    :returns: Void
+    */
     func launchRequestWithNSURL(request : NSURLRequest,
         completion : ((NSDictionary?)-> Void)) -> Void {
             
@@ -156,19 +210,38 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
             
             
             self.setNetworkActivityIndicatorVisible(visibility: true)
+            
+            
+            
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
                 
                 data = NSURLConnection.sendSynchronousRequest(request, returningResponse: &response, error: &errors)
                 
                 if data != nil {
-                    NSOperationQueue.mainQueue().addOperationWithBlock
-                        { completion(self.getJsonResponse(data : data?, errors: errors?, response: response?)!) }
+                    
+                    dispatch_async(dispatch_get_main_queue(),{
+                            completion(self.getJsonResponse(data : data?, errors: errors?, response: response?)!)
+                    });
+                    
                 }
-                
             }
-            
     }
     
+    
+    /**
+    the function will immediately lanuch in a therad request. Response will be
+    send to the main thread
+    
+    :param: cache-> (Bool) determine if the request will save and check in the cache before
+    
+    :param: timeout-> (NSTimeInterval) max sencond during a connection attempt to send the request
+
+    :param: method -> (MethodRequest)
+    
+    :param: completion-> ((NSDictionary?)-> Void))
+    
+    :returns: Void
+    */
     func launchRequest(cache: Bool,
         timeout: NSTimeInterval ,
         method: MethodRequest,
@@ -194,15 +267,29 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
             self.launchRequestWithNSURL(request, completion: completion)
     }
     
+    /**
+    the function will immediately lanuch in a therad request. Response will be
+    send to the main thread
+    
+    :param: cache-> (Bool) determine if the request will save and check in the cache before
+    
+    :param: timeout-> (NSTimeInterval) max sencond during a connection attempt to send the request
+    
+    :param: method -> (MethodRequest)
+    
+    :param: completion->  (data :NSData?, totalLengthDownloading: Int64, currentLengthDownloaded: Int64, error :Bool)-> Void)   
+    
+    :returns: Void
+    */
     func launchRequestDownloading(cache: Bool,
         timeout: NSTimeInterval ,
         method: MethodRequest,
-        completion : (data :NSData?, totalLengthDownloading: Int64, currentLengthDownloaded: Int64, error :Bool)-> Void)
+        completion : (data :NSData?, expectLengthDownloading: Int64, totalLengthDownloaded: Int64, error :Bool)-> Void)
         -> Void {
             
             
             if  self.url == nil {
-                completion(data: nil, totalLengthDownloading: 0, currentLengthDownloaded: 0, error: true);return
+                completion(data: nil, expectLengthDownloading: 0, totalLengthDownloaded: 0, error: true);return
             }
             let request : NSMutableURLRequest = NSMutableURLRequest(URL: self.url)
             request.setValue("", forHTTPHeaderField: "Accept-Encoding")
@@ -225,20 +312,24 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     }
     
     
+    
+    
+    
     internal func connection(connection: NSURLConnection, didFailWithError error: NSError) {
-                        self.completionDownloading!(data: nil, totalLengthDownloading: 0, currentLengthDownloaded: 0, error: true);
+        self.errorDownloading  = error
+        self.completionDownloading!(data: nil, totalLengthDownloading: 0, currentLengthDownloaded: 0, error: true);
     }
     
     internal func connection(connection: NSURLConnection, didReceiveResponse response: NSURLResponse) {
-        self.totalLengthDownloading = response.expectedContentLength
-        self.currentLengthDownloaded = 0
-        self.totalDataDownloading = NSMutableData()
+        self.expectLengthDownloading = response.expectedContentLength
+        self.totalLengthDownloaded = 0
+        self.totalDataDownloaded = NSMutableData()
     }
     
     internal func connection(connection: NSURLConnection, didReceiveData data: NSData) {
-        self.totalDataDownloading.appendData(data)
-        self.currentLengthDownloaded += data.length
-        self.completionDownloading!(data: data, totalLengthDownloading: self.totalLengthDownloading, currentLengthDownloaded: self.currentLengthDownloaded, error: false)
+        self.totalDataDownloaded.appendData(data)
+        self.totalLengthDownloaded += data.length
+        self.completionDownloading!(data: data, totalLengthDownloading: self.expectLengthDownloading, currentLengthDownloaded: self.totalLengthDownloaded, error: false)
     }
     
     
