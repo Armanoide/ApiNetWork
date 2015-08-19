@@ -9,7 +9,7 @@
 import UIKit
 
 class ViewController: UIViewController {
-
+    
     
     @IBOutlet weak var imageView: UIImageView!
     
@@ -19,23 +19,22 @@ class ViewController: UIViewController {
         let n : ApiNetwork = ApiNetwork(stringURL: "http://dealerdemusique.fr/wp-content/uploads/2012/11/flume-700x422.jpeg")
         if n.connected() {
             
-            n.launchRequestDownloading(false, timeout: 100, method: ApiNetwork.MethodRequest.GET, completion: { (data, totalLengthDownloading, currentLengthDownloaded, error) -> Void in
+            n.launchRequest({ (response) -> Void in
                 
-                if data != nil || error == false {
-                    self.imageView.image = UIImage(data: n.totalDataDownloading)
-                    
+                if response.errors == nil {
+                    if let data = response.getResponseData() {
+                        self.imageView.image = UIImage(data: data)
+                    }
                 }
             })
-            
         }
-        
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
-
+    
+    
 }
 
