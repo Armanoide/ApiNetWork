@@ -46,7 +46,7 @@ All method are asynchronous.
             }
     }
 
-### Download and register in path
+### Download and register in a path
 
     let a  = ApiNetwork(stringURL: "your-url")
     a.setPathFileDownload("path-to-downlaod-file")
@@ -80,9 +80,9 @@ for each request, the response will return a ApiNetworkResponse class.
 
 use this method to get your result of request
 
-    func getResponseString() 
-    func getResponseData() 
-    func getResponseDictionary() 
+     getResponseString() 
+     getResponseData() 
+     getResponseDictionary() 
 
 
 ### Options ApiNetworkResponse
