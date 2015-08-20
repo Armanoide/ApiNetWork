@@ -19,13 +19,14 @@ class ViewController: UIViewController {
         let n : ApiNetwork = ApiNetwork(stringURL: "http://dealerdemusique.fr/wp-content/uploads/2012/11/flume-700x422.jpeg")
         if n.connected() {
             
-            n.launchRequest({ (response) -> Void in
-                
+            n.launchRequestDownloading(didReceived: nil, didFinished: { (response) -> Void in
+              
                 if response.errors == nil {
                     if let data = response.getResponseData() {
                         self.imageView.image = UIImage(data: data)
                     }
                 }
+                
             })
         }
     }

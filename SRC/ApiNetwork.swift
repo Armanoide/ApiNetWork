@@ -142,7 +142,7 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     private(set) internal var errorRequest              : NSError?
     private(set) internal var connectionDownloading     : NSURLConnection!
     private(set) internal var pathFile                  : NSString!
-    private(set) internal var writeFile                 : Bool!
+    private(set) internal var writeFile                 : Bool  = false
     private(set) internal var method                    : ApiNetworkMethodRequest = .GET
     
     
@@ -152,7 +152,7 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     
     private var cached                                  : Bool = false
     
-    private var pathFileDownload : String!
+    private var pathFileDownload : String               = ""
     
     private var response                                : NSURLResponse!
     private var typeRequest                             : TypeRequest = .NORMAL
@@ -183,7 +183,7 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     }
     
     func setMethod(method : ApiNetworkMethodRequest)    { self.method = method }
-    func setPathFileDownload(path: String)              { self.pathFileDownload = path }
+    func setPathFileDownload(path: String)              { self.pathFileDownload = path ; self.writeFile = true }
     func setCached(cached: Bool)                        { self.cached = cached }
     
     func clear()                                        { totalDataDownloaded  = nil }
@@ -410,7 +410,6 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
             self.typeRequest = TypeRequest.DOWNLOAD
             self.didFinished = didFinished
             
-            self.writeFile  = self.pathFileDownload != nil
             var error : NSError?
             var downloadedBytes : UInt64 = 0
             
