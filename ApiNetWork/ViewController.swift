@@ -16,26 +16,22 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let n : ApiNetwork = ApiNetwork(stringURL: "http://dealerdemusique.fr/wp-content/uploads/2012/11/flume-700x422.jpeg")
-        if n.connected() {
-            
-            n.launchRequestDownloading(didReceived: nil, didFinished: { (response) -> Void in
-              
+       
+
+        
+        ApiNetwork.urlDownload("http://dealerdemusique.fr/wp-content/uploads/2012/11/flume-700x422.jpeg", didReceived: nil)
+            { (response) -> Void in
                 if response.errors == nil {
                     if let data = response.getResponseData() {
                         self.imageView.image = UIImage(data: data)
                     }
+                } else if response.didFailNotConnectedToInternet() == true {
+                    println("not connection to internet")
                 }
-                
-            })
         }
+        
+        
     }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-    
     
 }
 

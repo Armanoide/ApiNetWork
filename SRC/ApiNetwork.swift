@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import SystemConfiguration
 import UIKit
 
 /**
@@ -24,7 +25,7 @@ enum ApiNetworkMethodRequest : String {
     case DELETE                 = "DELETE"
     case PUT                    = "PUT"
     case HEAD                   = "HEAD"
-    case CONNECT                = "CONNECT"
+    case PATCH                  = "PATCH"
 }
 
 /**
@@ -70,7 +71,7 @@ class ApiNetworkResponse {
         if response != nil {
             self.status_code        = (response! as! NSHTTPURLResponse).statusCode
             if let __rs             = NSString(data: data!, encoding: NSUTF8StringEncoding) {
-                    self.responseString = __rs as! String
+                self.responseString = __rs as! String
             } else {
                 assert(true, "unkown encode, please use launchRequestDownloading method")
             }
@@ -94,14 +95,14 @@ class ApiNetworkResponse {
         return json
     }
     
-    
+    func didFailNotConnectedToInternet() -> Bool    { return self.errors.code == NSURLErrorNotConnectedToInternet  }
     func getResponseString() -> String?             { return self.responseString }
     func getResponseData() -> NSData?               { return self.data }
     func getResponseDictionary() -> NSDictionary?   { return self.parseJSON(data!, originData: responseString! as String) }
     
 }
 
-/// Ascy Manager NetWork V1.1
+/// Ascy Manager NetWork V2.0
 class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     
     
@@ -178,9 +179,28 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     override init (){ super.init() }
     init (stringURL: String) {
         super.init()
-        if Reachability.isConnectedToNetwork()
+        if self.isConnectedToNetwork()
         { self.url = NSURL(string: stringURL) }
     }
+    
+    
+    class func launchRequest(url : String, completion: (response : ApiNetworkResponse) -> Void) -> ApiNetwork {
+        
+        let n = ApiNetwork(stringURL: url)
+        n.launchRequest(completion)
+        return n
+    }
+
+    class func launchRequestDownloading(url : String,
+        didReceived: ((response : ApiNetworkResponse) -> Void)?,
+        didFinished: (response : ApiNetworkResponse) -> Void) -> ApiNetwork {
+        
+        let n = ApiNetwork(stringURL: url)
+        n.launchRequestDownloading(didReceived: didReceived, didFinished: didFinished)
+        return n
+    }
+
+    
     
     func setMethod(method : ApiNetworkMethodRequest)    { self.method = method }
     func setPathFileDownload(path: String)              { self.pathFileDownload = path ; self.writeFile = true }
@@ -248,6 +268,31 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
         
     }
     
+    
+    /**
+    :see: Original post - http://www.chrisdanielson.com/2009/07/22/iphone-network-connectivity-test-example/
+    */
+    private func isConnectedToNetwork() -> Bool {
+        
+        var zeroAddress = sockaddr_in(sin_len: 0, sin_family: 0, sin_port: 0, sin_addr: in_addr(s_addr: 0), sin_zero: (0, 0, 0, 0, 0, 0, 0, 0))
+        zeroAddress.sin_len = UInt8(sizeofValue(zeroAddress))
+        zeroAddress.sin_family = sa_family_t(AF_INET)
+        
+        let defaultRouteReachability = withUnsafePointer(&zeroAddress) {
+            SCNetworkReachabilityCreateWithAddress(nil, UnsafePointer($0)).takeRetainedValue()
+        }
+        
+        var flags: SCNetworkReachabilityFlags = 0
+        if SCNetworkReachabilityGetFlags(defaultRouteReachability, &flags) == 0 {
+            return false
+        }
+        
+        let isReachable = (flags & UInt32(kSCNetworkFlagsReachable)) != 0
+        let needsConnection = (flags & UInt32(kSCNetworkFlagsConnectionRequired)) != 0
+        
+        return (isReachable && !needsConnection) ? true : false
+    }
+    
     /**
     Check if network can be reached
     
@@ -255,7 +300,7 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     */
     func connected() -> Bool {
         
-        let net     = Reachability.isConnectedToNetwork()
+        let net     = self.isConnectedToNetwork()
         //let reach   = Reachability.isHostReachability(host: self.url.absoluteString!)
         
         //println("net = \(net) et le reach =\(reach)")
@@ -297,22 +342,10 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
         parameter = p
     }
     
-    
-    func setJSONObject() {}
-    
-    
-    
     func prepareResponseRequest(#data: NSData?, errors: NSError?, response :NSURLResponse?) -> ApiNetworkResponse {
         self.setNetworkActivityIndicatorVisible(visibility: false)
         return ApiNetworkResponse(data: data, errors: errors, response: response)
     }
-    
-    func fromResponseRequestWith(#data: NSData?, errors: NSError?, response :NSURLResponse?) -> ApiNetworkResponse {
-        self.setNetworkActivityIndicatorVisible(visibility: true)
-        return self.prepareResponseRequest(data: data, errors: errors, response: response)
-    }
-    
-    
     
     /**
     the function will immediately lanuch in a therad request. Response will be
@@ -327,14 +360,16 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     func launchRequestWithNSURL(request : NSURLRequest,
         completion : ((response :ApiNetworkResponse)-> Void)) -> Void {
             
-            var data : NSData?
-            var response : NSURLResponse?
-            var errors : NSError?
             
-            self.setNetworkActivityIndicatorVisible(visibility: true)
-            self.completion = completion
             
-            NSURLConnection(request: request, delegate: self, startImmediately: true)
+            if self.connected() {
+                self.setNetworkActivityIndicatorVisible(visibility: true)
+                self.completion = completion
+                NSURLConnection(request: request, delegate: self, startImmediately: true)
+            } else {
+                let errorNet = NSError(domain: self.url.absoluteString!, code: NSURLErrorNotConnectedToInternet, userInfo: [NSLocalizedDescriptionKey :"Cannot connect to the internet. Service may not be available."])
+                completion(response: ApiNetworkResponse(data: nil, errors: errorNet, response: nil))
+            }
     }
     
     
@@ -385,8 +420,14 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     */
     func launchRequest(completion : ((response : ApiNetworkResponse)-> Void)) -> Void {
         
-        let request = self.prepareRequest()
-        self.launchRequestWithNSURL(request, completion: completion)
+        if self.connected() {
+            let request = self.prepareRequest()
+            self.launchRequestWithNSURL(request, completion: completion)
+        } else {
+            let errorNet = NSError(domain: self.url.absoluteString!, code: NSURLErrorNotConnectedToInternet, userInfo: [NSLocalizedDescriptionKey :"Cannot connect to the internet. Service may not be available."])
+            completion(response: ApiNetworkResponse(data: nil, errors: errorNet, response: nil))
+
+        }
     }
     
     /**
