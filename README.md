@@ -2,76 +2,99 @@ ApiNetWork
 ==========
 
 # Manage Async NetWork for Swift
-Note: Build on Xcode 6 
+Note: Build on Xcode 6, swift 1.2
 
 ## Install
 
-To use this vendor add files ApiNetwork.swift and Reachability.swift to your Project.
-method launchRequest, launchRequestWithNSURL,launchRequestDownloading are all asynchronous
+To use this vendor add files ApiNetwork.swift  to your Project.
+All method are asynchronous.
 
 ## Basic
-    let n : ApiNetwork = ApiNetwork(stringURL: "http://google.fr")
-    if n.connected() {
-     n.launchRequest(false, timeout: 10, method: ApiNetwork.MethodRequest.GET,
-                        completion: {(result :NSDictionary?) -> Void in
-                          
-                    })
-    } else { /* There is no network */}
-
+     
+        ApiNetwork.launchRequest("http://www.google.fr", completion:
+        { (response) -> Void in
+            
+        })
+        
+        or 
+        
+        let a  = ApiNetwork(stringURL: "your-url")
+        a.launchRequest(didReceived: nil) { (response) -> Void in
+            
+        }
 
 ## Parameter
+    
+    //yourUrl?user=jack&password=test
      let n : ApiNetwork = ApiNetwork(stringURL: "yourUrl")
      n.addParameterWithKey("user", "jack")
      n.addParameterWithKey("password", "test")
 
-
 ## Downloading
 
-    let image : UIImage!
-    let n : ApiNetwork = ApiNetwork(stringURL: "https://i1.sndcdn.com/artworks-000077403039-k956ck-large.jpg")
-    if n.connected() {
-     n.launchRequestDownloading(false, timeout: 30, method: ApiNetwork.MethodRequest.GET, 
-     completion: { (data, totalLengthDownloading, currentLengthDownloaded, error) -> Void in
-                          if !error {
-                            image  = UIImage(data: n.totalDataDownloading)
-                        }
-                    })
+### Launch a simple download
 
-    } else { /* There is no network */}
+    let iv : UIImageView = UIImageView() 
+    let a = ApiNetwork.launchRequestDownloading("your-url", didReceived: nil)
+     { (response) -> Void in
+            if response.errors == nil {
+                if let data = response.getResponseData() {
+                    iv.image = UIImage(data: data)
+                }
+            } else if response.didFailNotConnectedToInternet() == true {
+                println("not connection to internet")
+            }
+    }
+
+### Download and register in path
+
+    let a  = ApiNetwork(stringURL: "your-url")
+    a.setPathFileDownload("path-to-downlaod-file")
+    a.launchRequestDownloading(didReceived: nil) { (response) -> Void in
+            
+    }
+
+### Resume Download
+
+you can resume a download simple by re-launch the request. It's only work if you use setPathFileDownload 
+
+### stop downloading
+
+call method stopDownloading() to stop
+
 
 ### Method Request
-  for your method request can use .GET .POST .DELETE .PUT
+  by default, method is set to .GET but can change to .GET .POST .DELETE .PUT .PATCH .HEAD
+
+    let a = ApiNetwork(stringURL: "your-url")
+    a.setMethod(.POST)
+    a.launchRequest { (response) -> Void in
+        // DO YOU WANT            
+    }
 
 
-## Output Response with launchRequest, launchRequestWithNSURL 
-By default the response output try to convert to NSDictionary. To change the output response type:
+## Response 
+for each request, the response will return a ApiNetworkResponse class. 
 
-    let n : ApiNetwork = ApiNetwork(stringURL: "http://google.fr")
-    n.ouput = ApiNetwork.ResponseOutput.NSData // FOR NSData
-    n.ouput = ApiNetwork.ResponseOutput.String // FOR String
-    n.ouput = ApiNetwork.ResponseOutput.NSDictionary // FOR NSDictionary
+### Result Request
+
+use this method to get your result of request
+
+    func getResponseString() 
+    func getResponseData() 
+    func getResponseDictionary() 
 
 
-### HOW TO USE Response with launchRequest, launchRequestWithNSURL 
-  
-    let n : ApiNetwork = ApiNetwork(stringURL: "http://google.fr")
-    n.ouput = ApiNetwork.ResponseOutput.String
-    if n.connected() {
-     n.launchRequest(false, timeout: 10, method: ApiNetwork.MethodRequest.GET,
-                        completion: {(response :NSDictionary?) -> Void in
-                           
-                           if result != nil {
-                              let s : String? =  response!.objectForKey(ApiNetwork.KeyResult.RESPONSE.rawValue) as? String
-                              let statusCode : Int = response!.objectForKey(ApiNetwork.KeyResult.CODE_RESPONSE.rawValue) as Int
-                              let err : String = response!.objectForKey(ApiNetwork.KeyResult.CONNECTION_ERROR) as? String 
-                              
-                              if err != nil { /*There is an error  */ }
-                              if statusCode == 404 { /* Ressource URL not longer exist */  }
-                              if s != nil { println(s)  }
-                           }
-                                                 
-                    })
-    } else { /* There is no network */}
+### Options ApiNetworkResponse
+
+    status_code
+    errors                    
+    header                    
+    URL                       
+    mime_type                 
+    expectLengthDownloading   
+    totalLengthDownloaded     
+
 
 
 ## Still need help?
