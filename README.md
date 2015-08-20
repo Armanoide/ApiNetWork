@@ -1,9 +1,9 @@
 ApiNetWork V2
-All method are asynchronous.
 ==========
 
 # Manage Async NetWork for Swift
 Note: Build on Xcode 6, swift 1.2
+All method are asynchronous.
 
 ## Install
 
