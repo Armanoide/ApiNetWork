@@ -1,4 +1,4 @@
-ApiNetWork
+ApiNetWork V2
 ==========
 
 # Manage Async NetWork for Swift
@@ -56,15 +56,15 @@ All method are asynchronous.
 
 ### Resume Download
 
-you can resume a download simple by re-launch the request. It's only work if you use setPathFileDownload 
+You can resume a download simple by re-launch the request. It's only work if you use setPathFileDownload 
 
-### stop downloading
+### Stop downloading
 
-call method stopDownloading() to stop
+Call method stopDownloading() to stop
 
 
 ### Method Request
-  by default, method is set to .GET but can change to .GET .POST .DELETE .PUT .PATCH .HEAD
+  By default, method is set to .GET but can change to .GET .POST .DELETE .PUT .PATCH .HEAD
 
     let a = ApiNetwork(stringURL: "your-url")
     a.setMethod(.POST)
@@ -74,11 +74,10 @@ call method stopDownloading() to stop
 
 
 ## Response 
-for each request, the response will return a ApiNetworkResponse class. 
+For each request, the response will return a ApiNetworkResponse class. 
 
 ### Result Request
-
-use this method to get your result of request
+Use this method to get your result of request
 
      getResponseString() 
      getResponseData() 
