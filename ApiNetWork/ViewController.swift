@@ -19,7 +19,7 @@ class ViewController: UIViewController {
        
 
         
-        ApiNetwork.urlDownload("http://dealerdemusique.fr/wp-content/uploads/2012/11/flume-700x422.jpeg", didReceived: nil)
+        ApiNetWork.launchRequestDownloading("http://dealerdemusique.fr/wp-content/uploads/2012/11/flume-700x422.jpeg", didReceived: nil)
             { (response) -> Void in
                 if response.errors == nil {
                     if let data = response.getResponseData() {

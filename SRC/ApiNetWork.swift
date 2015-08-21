@@ -1,7 +1,7 @@
 
 //
-//  ApiNetwork.swift
-//  ApiNetwork
+//  ApiNetWork.swift
+//  ApiNetWork
 //
 //  Created by Norbert Billa on 26/10/2014.
 //  Copyright (c) 2014 norbert. All rights reserved.
@@ -19,7 +19,7 @@ Request Method HTTP/1.1
 - DELETE
 - PUT
 */
-enum ApiNetworkMethodRequest : String {
+enum ApiNetWorkMethodRequest : String {
     case POST                   = "POST"
     case GET                    = "GET"
     case DELETE                 = "DELETE"
@@ -35,13 +35,13 @@ Output Response
 - NSData
 - String
 */
-enum ApiNetworkResponseType {
+enum ApiNetWorkResponseType {
     case NSDictionary
     case String
     case NSData
 }
 
-class ApiNetworkResponse {
+class ApiNetWorkResponse {
     
     private (set) var status_code               : Int = -1
     private (set) var errors                    : NSError!
@@ -103,7 +103,7 @@ class ApiNetworkResponse {
 }
 
 /// Ascy Manager NetWork V2.0
-class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
+class ApiNetWork : NSObject, NSURLConnectionDataDelegate {
     
     
     private struct ActivityManager {  static var NumberOfCallsToSetVisible : Int32 = 0 }
@@ -144,7 +144,7 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     private(set) internal var connectionDownloading     : NSURLConnection!
     private(set) internal var pathFile                  : NSString!
     private(set) internal var writeFile                 : Bool  = false
-    private(set) internal var method                    : ApiNetworkMethodRequest = .GET
+    private(set) internal var method                    : ApiNetWorkMethodRequest = .GET
     
     
     private  var totalDataDownloaded                    : NSMutableData!
@@ -159,8 +159,8 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     private var typeRequest                             : TypeRequest = .NORMAL
     private var fh                                      : NSFileHandle!
     private var seekDownload                            : UInt64 = 0
-    private var completion                              : ((response : ApiNetworkResponse)-> Void)!
-    private var didReceived                             : ((response : ApiNetworkResponse)-> Void)?
+    private var completion                              : ((response : ApiNetWorkResponse)-> Void)!
+    private var didReceived                             : ((response : ApiNetWorkResponse)-> Void)?
     var json : NSDictionary!
     
     /**
@@ -174,7 +174,7 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     var timeout                                         : NSTimeInterval = 45
     
     
-    private var didFinished : ((response : ApiNetworkResponse)-> Void)!
+    private var didFinished : ((response : ApiNetWorkResponse)-> Void)!
     
     override init (){ super.init() }
     init (stringURL: String) {
@@ -184,25 +184,25 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     }
     
     
-    class func launchRequest(url : String, completion: (response : ApiNetworkResponse) -> Void) -> ApiNetwork {
+    class func launchRequest(url : String, completion: (response : ApiNetWorkResponse) -> Void) -> ApiNetWork {
         
-        let n = ApiNetwork(stringURL: url)
+        let n = ApiNetWork(stringURL: url)
         n.launchRequest(completion)
         return n
     }
 
     class func launchRequestDownloading(url : String,
-        didReceived: ((response : ApiNetworkResponse) -> Void)?,
-        didFinished: (response : ApiNetworkResponse) -> Void) -> ApiNetwork {
+        didReceived: ((response : ApiNetWorkResponse) -> Void)?,
+        didFinished: (response : ApiNetWorkResponse) -> Void) -> ApiNetWork {
         
-        let n = ApiNetwork(stringURL: url)
+        let n = ApiNetWork(stringURL: url)
         n.launchRequestDownloading(didReceived: didReceived, didFinished: didFinished)
         return n
     }
 
     
     
-    func setMethod(method : ApiNetworkMethodRequest)    { self.method = method }
+    func setMethod(method : ApiNetWorkMethodRequest)    { self.method = method }
     func setPathFileDownload(path: String)              { self.pathFileDownload = path ; self.writeFile = true }
     func setCached(cached: Bool)                        { self.cached = cached }
     
@@ -342,9 +342,9 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
         parameter = p
     }
     
-    func prepareResponseRequest(#data: NSData?, errors: NSError?, response :NSURLResponse?) -> ApiNetworkResponse {
+    func prepareResponseRequest(#data: NSData?, errors: NSError?, response :NSURLResponse?) -> ApiNetWorkResponse {
         self.setNetworkActivityIndicatorVisible(visibility: false)
-        return ApiNetworkResponse(data: data, errors: errors, response: response)
+        return ApiNetWorkResponse(data: data, errors: errors, response: response)
     }
     
     /**
@@ -358,7 +358,7 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     :returns: Void
     */
     func launchRequestWithNSURL(request : NSURLRequest,
-        completion : ((response :ApiNetworkResponse)-> Void)) -> Void {
+        completion : ((response :ApiNetWorkResponse)-> Void)) -> Void {
             
             
             
@@ -368,7 +368,7 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
                 NSURLConnection(request: request, delegate: self, startImmediately: true)
             } else {
                 let errorNet = NSError(domain: self.url.absoluteString!, code: NSURLErrorNotConnectedToInternet, userInfo: [NSLocalizedDescriptionKey :"Cannot connect to the internet. Service may not be available."])
-                completion(response: ApiNetworkResponse(data: nil, errors: errorNet, response: nil))
+                completion(response: ApiNetWorkResponse(data: nil, errors: errorNet, response: nil))
             }
     }
     
@@ -414,18 +414,18 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     
     :param: cache-> (Bool) determine if the request will save and check in the cache before
     
-    :param: completion-> ((response : ApiNetworkResponse)-> Void))
+    :param: completion-> ((response : ApiNetWorkResponse)-> Void))
     
     :returns: Void
     */
-    func launchRequest(completion : ((response : ApiNetworkResponse)-> Void)) -> Void {
+    func launchRequest(completion : ((response : ApiNetWorkResponse)-> Void)) -> Void {
         
         if self.connected() {
             let request = self.prepareRequest()
             self.launchRequestWithNSURL(request, completion: completion)
         } else {
             let errorNet = NSError(domain: self.url.absoluteString!, code: NSURLErrorNotConnectedToInternet, userInfo: [NSLocalizedDescriptionKey :"Cannot connect to the internet. Service may not be available."])
-            completion(response: ApiNetworkResponse(data: nil, errors: errorNet, response: nil))
+            completion(response: ApiNetWorkResponse(data: nil, errors: errorNet, response: nil))
 
         }
     }
@@ -444,8 +444,8 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     */
     
     func launchRequestDownloading(
-        #didReceived : ((response : ApiNetworkResponse)-> Void)?,
-        didFinished : ((response : ApiNetworkResponse)-> Void))
+        #didReceived : ((response : ApiNetWorkResponse)-> Void)?,
+        didFinished : ((response : ApiNetWorkResponse)-> Void))
         -> Void {
             
             self.typeRequest = TypeRequest.DOWNLOAD
@@ -468,7 +468,7 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
             self.pathFile = self.pathFileDownload
             
             if  self.url == nil {
-                didFinished(response : ApiNetworkResponse(data: nil, errors: error, expectLengthDownloading: 0, totalLengthDownloaded: 0))
+                didFinished(response : ApiNetWorkResponse(data: nil, errors: error, expectLengthDownloading: 0, totalLengthDownloaded: 0))
                 return
             }
             let request : NSMutableURLRequest = NSMutableURLRequest(URL: self.url)
@@ -503,7 +503,7 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
     internal func connection(connection: NSURLConnection, didFailWithError error: NSError) {
         self.errorRequest       = error
         self.connectionDownloading  = connection
-        self.didFinished(response : ApiNetworkResponse(data: nil, errors: error, expectLengthDownloading: 0, totalLengthDownloaded: 0))
+        self.didFinished(response : ApiNetWorkResponse(data: nil, errors: error, expectLengthDownloading: 0, totalLengthDownloaded: 0))
     }
     
     internal func connection(connection: NSURLConnection, didReceiveResponse response: NSURLResponse) {
@@ -542,7 +542,7 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
         self.totalDataDownloaded.appendData(data)
         self.totalLengthDownloaded      += data.length
         self.didReceived?(
-            response                : ApiNetworkResponse(
+            response                : ApiNetWorkResponse(
                 data                    : data,
                 errors                  : self.errorRequest,
                 expectLengthDownloading : self.expectLengthDownloading,
@@ -561,7 +561,7 @@ class ApiNetwork : NSObject, NSURLConnectionDataDelegate {
                     self.fh = nil
                 }
                 self.didFinished(
-                    response                : ApiNetworkResponse(data: self.totalDataDownloaded,
+                    response                : ApiNetWorkResponse(data: self.totalDataDownloaded,
                         errors                  : self.errorRequest,
                         expectLengthDownloading : self.expectLengthDownloading,
                         totalLengthDownloaded   : self.totalLengthDownloaded))
