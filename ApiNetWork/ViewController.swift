@@ -16,10 +16,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-       
-
-        
-        ApiNetwork.urlDownload("http://dealerdemusique.fr/wp-content/uploads/2012/11/flume-700x422.jpeg", didReceived: nil)
+        ApiNetWork.launchRequestDownloading("http://dealerdemusique.fr/wp-content/uploads/2012/11/flume-700x422.jpeg", didReceived: nil)
             { (response) -> Void in
                 if response.errors == nil {
                     if let data = response.getResponseData() {

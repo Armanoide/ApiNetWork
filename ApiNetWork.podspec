@@ -1,13 +1,13 @@
 Pod::Spec.new do |s|
   s.name		= 'ApiNetWork'
-  s.version          	= '2.0.0'
+  s.version          	= '2.0.4'
   s.license 		= { :type => "MIT", :file => "LICENSE" }
-  s.platform      	= :ios, "7.0"
+  s.platform      	= :ios, '8.0'
   s.summary 		= 'Swift IOS vendor to manage network'
 
   s.homepage 		= 'https://github.com/Armanoide/ApiNetWork'
   s.author 		= { 'Billa Norbert' => 'norbert.billa@gmail.com' }
-  s.source 		= { :git => 'https://github.com/Armanoide/ApiNetWork.git', :tag => 'v2.0.0' }
+  s.source 		= { :git => 'https://github.com/Armanoide/ApiNetWork.git', :tag => 'V2.0.4' }
   s.source_files 	= 'SRC/*.{swift}'
   s.requires_arc 	= true
   s.frameworks 		= 'Foundation'
