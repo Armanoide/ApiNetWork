@@ -95,16 +95,16 @@ public class ApiNetWorkResponse {
     
 }
 
-private class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
+class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
     
-    private  var errorRequest              : NSError?
-    private  var connectionDownloading     : NSURLConnection!
-    private  var writeFile                 : Bool  = false
+    private  var errorRequest                           : NSError?
+    private  var connection                             : NSURLConnection!
+    private  var writeFile                              : Bool  = false
     
     
-    private var totalDataDownloaded                    : NSMutableData!
-    private var expectLengthDownloading                : Int64 = 0
-    private var totalLengthDownloaded                  : Int64 = 0
+    private var totalDataDownloaded                     : NSMutableData!
+    private var expectLengthDownloading                 : Int64 = 0
+    private var totalLengthDownloaded                   : Int64 = 0
     
     
     private var pathFileDownload                        : String               = ""
@@ -121,7 +121,9 @@ private class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
         super.init()
         self.typeRequest    = .NORMAL
         self.completion     = completion
-        NSURLConnection(request: request, delegate: self, startImmediately: true)
+        self.connection     = NSURLConnection(request: request, delegate: self, startImmediately: false)
+        self.connection.start()
+        self.setNetworkActivityIndicatorVisible(visibility: true)
     }
     
     init(request : NSURLRequest, writeFile : Bool,
@@ -132,7 +134,8 @@ private class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
             self.didFinished    = didFinished
             self.didReceived    = didReceived
             self.writeFile      = writeFile
-            NSURLConnection(request: request, delegate: self, startImmediately: true)
+            self.connection     = NSURLConnection(request: request, delegate: self, startImmediately: false)
+            self.connection.start()
     }
     
     ////////////////////////////////////////////////////////////////
@@ -164,7 +167,7 @@ private class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
     
     
     func stopDownloading() -> Void {
-        if self.connectionDownloading != nil { self.connectionDownloading.cancel() }
+        if self.connection != nil { self.connection.cancel() }
     }
     
     
@@ -242,8 +245,16 @@ private class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
     
     func connection(connection: NSURLConnection, didFailWithError error: NSError) {
         self.errorRequest           = error
-        self.connectionDownloading  = connection
-        self.didFinished(response : ApiNetWorkResponse(data: nil, errors: error, expectLengthDownloading: 0, totalLengthDownloaded: 0))
+        self.connection             = connection
+        
+        switch self.typeRequest {
+        case .DOWNLOAD:
+            self.didFinished(response : ApiNetWorkResponse(data: nil, errors: error, expectLengthDownloading: 0, totalLengthDownloaded: 0))
+            break
+        case .NORMAL:
+            self.completion(response: self.prepareResponseRequest(data: nil, errors: error, response: self.response))
+        default:break
+        }
     }
     
     func connection(connection: NSURLConnection, didReceiveResponse response: NSURLResponse) {
@@ -251,7 +262,7 @@ private class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
         self.response = response
         self.totalLengthDownloaded      = 0
         self.totalDataDownloaded        = NSMutableData()
-        self.connectionDownloading      = connection
+        self.connection                 = connection
         self.expectLengthDownloading    = response.expectedContentLength
         
         
@@ -278,7 +289,7 @@ private class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
             break
         }
         
-        self.connectionDownloading      = connection
+        self.connection                 = connection
         self.totalDataDownloaded.appendData(data)
         self.totalLengthDownloaded      += data.length
         self.didReceived?(
