@@ -3,11 +3,11 @@ ApiNetWork V2
 
 # Manage Async NetWork for Swift
 Note: Build on Xcode 6, swift 1.2
+All method are asynchronous.
 
 ## Install
 
-To use this vendor add files ApiNetwork.swift  to your Project.
-All method are asynchronous.
+To use this vendor add files ApiNetwork.swift to your Project or add pod 'ApiNetWork', '~> 2.0.4' to your podfile
 
 ## Basic
      
