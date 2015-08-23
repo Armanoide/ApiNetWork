@@ -91,7 +91,7 @@ public class ApiNetWorkResponse {
     public func didFailNotConnectedToInternet() -> Bool    { return self.errors?.code == NSURLErrorNotConnectedToInternet  }
     public func getResponseString() -> String?             { return self.responseString }
     public func getResponseData() -> NSData?               { return self.data }
-    public func getResponseDictionary() -> NSDictionary?   { return self.parseJSON(data!, originData: responseString! as String) }
+    public func getResponseDictionary() -> NSDictionary?   { if self.data == nil { return nil } else { return self.parseJSON(data!, originData: responseString! as String) } }
     
 }
 
@@ -225,7 +225,7 @@ class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
             } else {
                 fh.seekToFileOffset(bytes)
             }
-            break;
+            break
         default:
             
             if self.writeFile == false {
@@ -246,6 +246,8 @@ class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
     func connection(connection: NSURLConnection, didFailWithError error: NSError) {
         self.errorRequest           = error
         self.connection             = connection
+        
+        println("ApiNetWork fail : - \(error.localizedDescription)")
         
         switch self.typeRequest {
         case .DOWNLOAD:
@@ -271,15 +273,18 @@ class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
             self.seekFileHandle(response)
             break
         case .NORMAL: break
-        default:break
-            
         }
     }
     
     func connection(connection: NSURLConnection, didReceiveData data: NSData) {
         
+        self.connection                 = connection
+        self.totalDataDownloaded.appendData(data)
+        self.totalLengthDownloaded      += data.length
+        
         switch self.typeRequest {
         case .NORMAL: break
+            
         case .DOWNLOAD:
             if self.writeFile == true {
                 
@@ -288,42 +293,43 @@ class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
             }
             break
         }
-        
-        self.connection                 = connection
-        self.totalDataDownloaded.appendData(data)
-        self.totalLengthDownloaded      += data.length
-        self.didReceived?(
-            response                : ApiNetWorkResponse(
-                data                    : data,
-                errors                  : self.errorRequest,
-                expectLengthDownloading : self.expectLengthDownloading,
-                totalLengthDownloaded   : self.totalLengthDownloaded))
+        dispatch_async(dispatch_get_main_queue(),{
+            
+            self.didReceived?(
+                response                : ApiNetWorkResponse(
+                    data                    : data,
+                    errors                  : self.errorRequest,
+                    expectLengthDownloading : self.expectLengthDownloading,
+                    totalLengthDownloaded   : self.totalLengthDownloaded))
+            
+        })
     }
     
     
     func connectionDidFinishLoading(connection: NSURLConnection) {
         
-        dispatch_async(dispatch_get_main_queue(),{
-            
-            switch self.typeRequest {
-            case .DOWNLOAD:
-                if self.writeFile == true {
-                    self.fh.closeFile()
-                    self.fh = nil
-                }
+        
+        switch self.typeRequest {
+        case .DOWNLOAD:
+            if self.writeFile == true {
+                self.fh.closeFile()
+                self.fh = nil
+            }
+            dispatch_async(dispatch_get_main_queue(),{
                 self.didFinished(
                     response                : ApiNetWorkResponse(data: self.totalDataDownloaded,
                         errors                  : self.errorRequest,
                         expectLengthDownloading : self.expectLengthDownloading,
                         totalLengthDownloaded   : self.totalLengthDownloaded))
-                break
-            case .NORMAL:
+            })
+            break
+        case .NORMAL:
+            dispatch_async(dispatch_get_main_queue(),{
                 self.completion(response: self.prepareResponseRequest(data: self.totalDataDownloaded, errors: self.errorRequest, response: self.response))
-                break
-            default:break
-            }
-            
-        })
+            })
+            break
+        }
+        
         
     }
     
@@ -520,7 +526,7 @@ public class ApiNetWork {
             let request = self.prepareRequest()
             self.launchRequestWithNSURL(request, completion: completion)
         } else {
-            let errorNet = NSError(domain: self.url.absoluteString!, code: NSURLErrorNotConnectedToInternet, userInfo: [NSLocalizedDescriptionKey :"Cannot connect to the internet. Service may not be available."])
+            let errorNet = NSError(domain: self.url.absoluteString ?? "", code: NSURLErrorNotConnectedToInternet, userInfo: [NSLocalizedDescriptionKey :"Cannot connect to the internet. Service may not be available."])
             completion(response: ApiNetWorkResponse(data: nil, errors: errorNet, response: nil))
             
         }
