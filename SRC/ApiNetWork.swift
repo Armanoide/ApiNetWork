@@ -126,15 +126,16 @@ class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
         self.setNetworkActivityIndicatorVisible(visibility: true)
     }
     
-    init(request : NSURLRequest, writeFile : Bool,
+    init(request : NSURLRequest, pathFileDownload : String,
         didReceived : ((response : ApiNetWorkResponse)-> Void)?,
         didFinished : ((response : ApiNetWorkResponse)-> Void)) {
             super.init()
-            self.typeRequest    = .DOWNLOAD
-            self.didFinished    = didFinished
-            self.didReceived    = didReceived
-            self.writeFile      = writeFile
-            self.connection     = NSURLConnection(request: request, delegate: self, startImmediately: false)
+            self.typeRequest        = .DOWNLOAD
+            self.didFinished        = didFinished
+            self.didReceived        = didReceived
+            self.writeFile          = pathFileDownload == "" ? false : true
+            self.pathFileDownload   = pathFileDownload
+            self.connection         = NSURLConnection(request: request, delegate: self, startImmediately: false)
             self.connection.start()
     }
     
@@ -187,7 +188,7 @@ class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
         let rh : NSHTTPURLResponse  = response as! NSHTTPURLResponse
         self.fh                     = NSFileHandle(forWritingAtPath: self.pathFileDownload as String)
         
-        assert(!(fh == nil) , "[ApiNetWork % Dowloading ] : Cannot Write at path \(self.pathFileDownload)")
+        assert(!(fh == nil) , "[ApiNetWork % Dowloading ] : Cannot Write at path \(self.pathFileDownload) ~~~")
         switch rh.statusCode {
         case 206:
             
@@ -597,8 +598,7 @@ public class ApiNetWork {
             
             
             if self.agent != nil { request.setValue(self.agent, forHTTPHeaderField: "User-Agent") }
-            
-            self.connection = ApiNetWorkConnection(request: request, writeFile: writeFile, didReceived: didReceived, didFinished: didFinished)
+            self.connection = ApiNetWorkConnection(request: request, pathFileDownload: self.pathFileDownload, didReceived: didReceived, didFinished: didFinished)
     }
     
     /**
