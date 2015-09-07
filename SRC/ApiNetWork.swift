@@ -375,6 +375,33 @@ public class ApiNetWork {
             return n
     }
     
+    class public func URLencode(url: String) -> String {
+        
+        var output      : String = ""
+        let sourceLen   = count(url)
+        for c in url.unicodeScalars {
+            
+            switch c {
+            case " ":
+                output.append(Character("+"))
+                break
+            case ".", "-", "_", "~" ,
+            "a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v",
+            "w","x","y","z",
+            "A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P",
+            "Q","R","S","T","U","V","W","X","Z","Y",
+            "0","1","2","3","4","5","6","7","8","9":
+                output.append(c)
+            default:
+                output +=   NSString(format: "%%%002X", c.value) as String
+                break
+                
+            }
+        }
+        return output
+    }
+    
+    
     /**
     Set a user-agent of the request
     
@@ -448,7 +475,7 @@ public class ApiNetWork {
         var p : NSMutableDictionary?
         if self.parameter == nil { p = NSMutableDictionary() }
         else { p = NSMutableDictionary(dictionary: self.parameter!) }
-        p?.setValue(value, forKey: key)
+        p?.setValue(ApiNetWork.URLencode(value) , forKey: ApiNetWork.URLencode(key))
         self.parameter = p
     }
     
