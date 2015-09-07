@@ -7,7 +7,7 @@ All method are asynchronous.
 
 ## Install
 
-To use this vendor add files ApiNetwork.swift to your Project or add pod 'ApiNetWork', '~> 2.0.4' to your podfile
+To use this vendor add files ApiNetwork.swift to your Project or add pod 'ApiNetWork', to your podfile
 
 ## Basic
      
