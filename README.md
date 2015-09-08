@@ -7,7 +7,11 @@ All method are asynchronous.
 
 ## Install
 
-To use this vendor add files ApiNetwork.swift to your Project or add pod 'ApiNetWork', to your podfile
+With CocoaPods:
+
+    pod 'ApiNetWork'
+Cocoapods requires iOS 8.0 or higher.
+If you're supporting iOS 7, or if you prefer, you can just drop ApiNetWork.swift to your project.
 
 ## Basic
      
@@ -60,7 +64,8 @@ You can resume a download simple by re-launch the request. It's only work if you
 
 ### Stop downloading
 
-Call method stopDownloading() to stop
+Call method 
+    stopDownloading() 
 
 
 ### Method Request
