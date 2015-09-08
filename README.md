@@ -89,7 +89,7 @@ Use this method to get your result of request
      getResponseDictionary() 
 
 
-### Options ApiNetworkResponse
+### Options & Variable ApiNetworkResponse 
 
     status_code
     errors                    
