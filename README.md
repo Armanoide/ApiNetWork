@@ -9,8 +9,8 @@ All method are asynchronous.
 
 With CocoaPods:
 
-use 2.X for swift 1.2
-use 3.X for swift 2
+Use ~> "2.X.X" for swift 1.2
+Use ~> "3.X.X" for swift 2
 
     pod 'ApiNetWork'
 Cocoapods requires iOS 8.0 or higher.
