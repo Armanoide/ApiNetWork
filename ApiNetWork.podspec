@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
   s.version          	= '3.0.0'
   s.license 		= { :type => "MIT", :file => "LICENSE" }
   s.platform      	= :ios, '8.0'
-  s.summary 		= 'Swift IOS vendor to manage network'
+  s.summary 		= 'Swift IOS easy vendor to manage network'
 
   s.homepage 		= 'https://github.com/Armanoide/ApiNetWork'
   s.author 		= { 'Billa Norbert' => 'norbert.billa@gmail.com' }
