@@ -23,7 +23,7 @@ class ViewController: UIViewController {
                         self.imageView.image = UIImage(data: data)
                     }
                 } else if response.didFailNotConnectedToInternet() == true {
-                    println("not connection to internet")
+                    print("not connection to internet")
                 }
         }
         

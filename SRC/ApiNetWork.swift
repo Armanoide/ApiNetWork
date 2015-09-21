@@ -57,14 +57,13 @@ public class ApiNetWorkResponse {
     }
     
     init(data: NSData?, errors: NSError?, response :NSURLResponse?) {
-        var jsonReturn : NSMutableDictionary!
         
         self.data = data
         
         if response != nil {
             self.status_code        = (response! as! NSHTTPURLResponse).statusCode
             if let __rs             = NSString(data: data!, encoding: NSUTF8StringEncoding) {
-                self.responseString = __rs as! String
+                self.responseString = __rs as String
             } else {
                 assert(true, "unkown encode, please use launchRequestDownloading method")
             }
@@ -79,12 +78,11 @@ public class ApiNetWorkResponse {
     }
     
     private func parseJSON(inputData : NSData, originData :String) -> NSDictionary? {
-        var errorJson  : NSError?
         
         var json : NSDictionary?
-        
-        json = NSJSONSerialization.JSONObjectWithData(inputData, options: NSJSONReadingOptions.MutableContainers, error: &errorJson) as? NSDictionary
-        
+        do {
+        json = try NSJSONSerialization.JSONObjectWithData(inputData, options: NSJSONReadingOptions.MutableContainers) as? NSDictionary
+        } catch  { }
         return json
     }
     
@@ -156,7 +154,7 @@ class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
     ////////////////////////   RESPONSE   //////////////////////////
     ////////////////////////////////////////////////////////////////
     
-    func prepareResponseRequest(#data: NSData?, errors: NSError?, response :NSURLResponse?) -> ApiNetWorkResponse {
+    func prepareResponseRequest(data data: NSData?, errors: NSError?, response :NSURLResponse?) -> ApiNetWorkResponse {
         self.setNetworkActivityIndicatorVisible(visibility: false)
         return ApiNetWorkResponse(data: data, errors: errors, response: response)
     }
@@ -197,8 +195,13 @@ class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
             var regex : NSRegularExpression!
             
             
-            // Check to see if the server returned a valid byte-range
-            regex = NSRegularExpression(pattern: "bytes (\\d+)-\\d+/\\d+", options: NSRegularExpressionOptions.CaseInsensitive, error: &error)
+            do {
+                // Check to see if the server returned a valid byte-range
+                regex = try NSRegularExpression(pattern: "bytes (\\d+)-\\d+/\\d+", options: NSRegularExpressionOptions.CaseInsensitive)
+            } catch let error1 as NSError {
+                error = error1
+                regex = nil
+            }
             
             if (error != nil) {
                 self.fh.truncateFileAtOffset(0)
@@ -206,7 +209,7 @@ class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
             }
             
             // If the regex didn't match the number of bytes, start the download from the beginning
-            var match : NSTextCheckingResult = regex.firstMatchInString(range as String, options: NSMatchingOptions.Anchored, range: NSMakeRange(0, range.length))!
+            let match : NSTextCheckingResult = regex.firstMatchInString(range as String, options: NSMatchingOptions.Anchored, range: NSMakeRange(0, range.length))!
             
             if (match.numberOfRanges < 2) {
                 self.fh.truncateFileAtOffset(0)
@@ -248,7 +251,7 @@ class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
         self.errorRequest           = error
         self.connection             = connection
         
-        println("ApiNetWork fail : - \(error.localizedDescription)")
+        print("ApiNetWork fail : - \(error.localizedDescription)")
         
         switch self.typeRequest {
         case .DOWNLOAD:
@@ -256,7 +259,6 @@ class ApiNetWorkConnection : NSObject, NSURLConnectionDataDelegate {
             break
         case .NORMAL:
             self.completion(response: self.prepareResponseRequest(data: nil, errors: error, response: self.response))
-        default:break
         }
     }
     
@@ -378,7 +380,6 @@ public class ApiNetWork {
     class public func URLencode(url: String) -> String {
         
         var output      : String = ""
-        let sourceLen   = count(url)
         for c in url.unicodeScalars {
             
             switch c {
@@ -405,9 +406,9 @@ public class ApiNetWork {
     /**
     Set a user-agent of the request
     
-    :param: agent-> the new user-agent
+    - parameter agent->: the new user-agent
     
-    :returns: Void
+    - returns: Void
     */
     public func setUserAgent(agent : String) -> Void           { self.agent = agent }
     public func setJsonDictionnary(json : NSDictionary)        { self.json = json }
@@ -430,16 +431,16 @@ public class ApiNetWork {
         zeroAddress.sin_family = sa_family_t(AF_INET)
         
         let defaultRouteReachability = withUnsafePointer(&zeroAddress) {
-            SCNetworkReachabilityCreateWithAddress(nil, UnsafePointer($0)).takeRetainedValue()
+            SCNetworkReachabilityCreateWithAddress(nil, UnsafePointer($0))
         }
         
-        var flags: SCNetworkReachabilityFlags = 0
-        if SCNetworkReachabilityGetFlags(defaultRouteReachability, &flags) == 0 {
+        var flags: SCNetworkReachabilityFlags = SCNetworkReachabilityFlags.ConnectionAutomatic
+        if SCNetworkReachabilityGetFlags(defaultRouteReachability!, &flags) == false {
             return false
         }
         
-        let isReachable = (flags & UInt32(kSCNetworkFlagsReachable)) != 0
-        let needsConnection = (flags & UInt32(kSCNetworkFlagsConnectionRequired)) != 0
+        let isReachable = (flags.rawValue & UInt32(kSCNetworkFlagsReachable)) != 0
+        let needsConnection = (flags.rawValue & UInt32(kSCNetworkFlagsConnectionRequired)) != 0
         
         return (isReachable && !needsConnection) ? true : false
     }
@@ -447,7 +448,7 @@ public class ApiNetWork {
     /**
     Check if network can be reached
     
-    :returns: Bool true if network is available
+    - returns: Bool true if network is available
     */
     public func connected() -> Bool {
         
@@ -465,11 +466,11 @@ public class ApiNetWork {
     Add parameter to the request. The function can be you only with method
     launchRequest and launchRequestDownloading
     
-    :param: key-> the of the parameter
+    - parameter key->: the of the parameter
     
-    :param: value-> the value of the paramter
+    - parameter value->: the value of the paramter
     
-    :returns: Void
+    - returns: Void
     */
     public func addParameterWithKey(key: String, value: String) -> Void {
         var p : NSMutableDictionary?
@@ -485,11 +486,11 @@ public class ApiNetWork {
     the function will immediately lanuch in a therad request. Response will be
     send to the main thread
     
-    :param: request-> (NSURLRequest)
+    - parameter request->: (NSURLRequest)
     
-    :param: completion-> ((NSDictionary?)-> Void))
+    - parameter completion->: ((NSDictionary?)-> Void))
     
-    :returns: Void
+    - returns: Void
     */
     public func launchRequestWithNSURL(request : NSURLRequest,
         completion : ((response :ApiNetWorkResponse)-> Void)) -> Void {
@@ -497,7 +498,7 @@ public class ApiNetWork {
             if self.connected() {
                 self.connection = ApiNetWorkConnection(request: request, completion: completion)
             } else {
-                let errorNet = NSError(domain: self.url.absoluteString!, code: NSURLErrorNotConnectedToInternet, userInfo: [NSLocalizedDescriptionKey :"Cannot connect to the internet. Service may not be available."])
+                let errorNet = NSError(domain: self.url.absoluteString, code: NSURLErrorNotConnectedToInternet, userInfo: [NSLocalizedDescriptionKey :"Cannot connect to the internet. Service may not be available."])
                 completion(response: ApiNetWorkResponse(data: nil, errors: errorNet, response: nil))
             }
     }
@@ -511,14 +512,14 @@ public class ApiNetWork {
         let request : NSMutableURLRequest = NSMutableURLRequest(URL: self.url)
         
         if self.json != nil {
-            if let requestData : NSData = NSJSONSerialization.dataWithJSONObject(self.json, options: nil, error: &error) {
+            do {
+                let requestData : NSData = try NSJSONSerialization.dataWithJSONObject(self.json, options: [])
                 request.setValue("application/json", forHTTPHeaderField: "Accept")
                 request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
                 request.setValue(NSString(format:"%lu", requestData.length) as String, forHTTPHeaderField:"Content-Length")
                 request.HTTPBody = requestData
-                println(request.HTTPBody)
-            }
-            else { println("\(error?.localizedDescription)") }
+                print(request.HTTPBody)
+            } catch let error1 as NSError { error = error1; print("\(error?.localizedDescription)") }
         }
         
         request.cachePolicy = self.cached == true
@@ -542,11 +543,11 @@ public class ApiNetWork {
     the function will immediately lanuch in a therad request. Response will be
     send to the main thread
     
-    :param: cache-> (Bool) determine if the request will save and check in the cache before
+    - parameter cache->: (Bool) determine if the request will save and check in the cache before
     
-    :param: completion-> ((response : ApiNetWorkResponse)-> Void))
+    - parameter completion->: ((response : ApiNetWorkResponse)-> Void))
     
-    :returns: Void
+    - returns: Void
     */
     public func launchRequest(completion : ((response : ApiNetWorkResponse)-> Void)) -> Void {
         
@@ -564,40 +565,36 @@ public class ApiNetWork {
     the function will immediately lanuch in a therad request. Response will be
     send to the main thread
     
-    :param: cache-> (Bool) determine if the request will save and check in the cache before
+    - parameter cache->: (Bool) determine if the request will save and check in the cache before
     
-    :param: method -> (MethodRequest)
+    - parameter method: -> (MethodRequest)
     
-    :param: completion->  (data :NSData?, totalLengthDownloading: Int64, currentLengthDownloaded: Int64, error :Bool)-> Void)
+    - parameter completion->:  (data :NSData?, totalLengthDownloading: Int64, currentLengthDownloaded: Int64, error :Bool)-> Void)
     
-    :returns: Void
+    - returns: Void
     */
     
     public func launchRequestDownloading(
-        #didReceived : ((response : ApiNetWorkResponse)-> Void)?,
+        didReceived didReceived : ((response : ApiNetWorkResponse)-> Void)?,
         didFinished : ((response : ApiNetWorkResponse)-> Void))
         -> Void {
             
-            var error                                           : NSError?
             var downloadedBytes                                 : UInt64 = 0
-            var range                                           : UInt64!
-            var seekDownload                                    : UInt64 = 0
-            var writeFile                                       : Bool = self.pathFileDownload == "" ? false : true
+            let writeFile                                       : Bool = self.pathFileDownload == "" ? false : true
             
             
             let fm : NSFileManager = NSFileManager.defaultManager()
             if fm.fileExistsAtPath(self.pathFileDownload) {
-                let fileDico : NSDictionary! = fm.attributesOfItemAtPath(self.pathFileDownload, error: &error)!
-                if error != nil && fileDico != nil {
+                let fileDico : NSDictionary! = try! fm.attributesOfItemAtPath(self.pathFileDownload)
+                if fileDico != nil {
                     downloadedBytes = fileDico.fileSize()
-                    seekDownload = downloadedBytes
                 }
             }
             else if writeFile == true
             { fm.createFileAtPath(self.pathFileDownload, contents: nil, attributes: nil) }
             
             if  self.url == nil {
-                didFinished(response : ApiNetWorkResponse(data: nil, errors: error, expectLengthDownloading: 0, totalLengthDownloaded: 0))
+                didFinished(response : ApiNetWorkResponse(data: nil, errors: nil, expectLengthDownloading: 0, totalLengthDownloaded: 0))
                 return
             }
             let request : NSMutableURLRequest = NSMutableURLRequest(URL: self.url)
@@ -618,9 +615,6 @@ public class ApiNetWork {
             if (downloadedBytes > 0) {
                 let requestRange = NSString(format: "bytes=%d-", downloadedBytes)
                 request.setValue(requestRange as String, forHTTPHeaderField: "Range")
-            } else if range != nil {
-                let requestRange = NSString(format: "bytes=%d-", range)
-                request.setValue(requestRange as String, forHTTPHeaderField: "Range")
             }
             
             
@@ -631,7 +625,7 @@ public class ApiNetWork {
     /**
     the function stop the downloading if the function "launch" as been alredy call
     
-    :returns: Void
+    - returns: Void
     */
     public func stopDownloading() -> Void {
         self.connection?.stopDownloading()

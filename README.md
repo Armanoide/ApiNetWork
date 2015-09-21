@@ -2,16 +2,20 @@ ApiNetWork V2
 ==========
 
 # Manage Async NetWork for Swift
-Note: Build on Xcode 6, swift 1.2
+Note: Build on Xcode 6, swift1.2, swift2
 All method are asynchronous.
 
 ## Install
 
 With CocoaPods:
 
+use 2.X for swift 1.2
+use 3.X for swift 2
+
     pod 'ApiNetWork'
 Cocoapods requires iOS 8.0 or higher.
 If you're supporting iOS 7, or if you prefer, you can just drop ApiNetWork.swift to your project.
+
 
 ## Basic
      
