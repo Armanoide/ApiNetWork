@@ -13,7 +13,7 @@ Use ~> "2.X.X" for swift 1.2
 Use ~> "3.X.X" for swift 2
 
     pod 'ApiNetWork'
-Cocoapods requires iOS 8.0 or higher.
+CocoaPods requires iOS 8.0 or higher.
 If you're supporting iOS 7, or if you prefer, you can just drop ApiNetWork.swift to your project.
 
 
